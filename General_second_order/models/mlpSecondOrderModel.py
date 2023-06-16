@@ -2,7 +2,7 @@
 from flax import linen as nn
 import optax
 import jax.numpy as jnp
-import util 
+import util
 import jax.random as random
 
 intermediate_embeding_time_dimension = 128

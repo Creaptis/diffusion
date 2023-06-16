@@ -1,0 +1,20 @@
+{
+  "config_name": "spiral",
+  "resume_training": false,
+  "dimension": 2,
+  "seed": 42,
+  "T": 1.0,
+  "num_timesteps": 1000,
+  "beta": 8.0,
+  "Gamma": 0.0,
+  "M": 1.0,
+  "nu": 2.1,
+  "Sigma_xx_0": 0.001,
+  "Sigma_vv_0": 0.1,
+  "lr": 0.005,
+  "train_batch_size": 512,
+  "num_train_iter": 30000,
+  "saving_folder": "results/second_order_beta8-0_M1-0_nu2-1_Gamma0-0",
+  "launch_time": 1686919297.4082913,
+  "index_iter": 0
+}

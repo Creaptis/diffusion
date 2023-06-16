@@ -1,5 +1,4 @@
 
-import util
 import options
 from runner import Runner
 
@@ -14,6 +13,7 @@ def main(opt):
     #     run.initialize_training(opt)
 
     run.train_or_retrieve_model(opt)
+    run.generate_deterministic_batch(opt)
 
 
 if __name__ == "__main__":
@@ -21,9 +21,11 @@ if __name__ == "__main__":
     print(util.yellow("======================================================="))
     print(util.yellow("     Diffusion : General parametrization"))
     print(util.yellow("======================================================="))
+
     print(util.magenta("setting configurations..."))
     opt = options.set()
-    print(util.red("\n values    :   nu {}    Gamma  {}    M  {} \n".format(  opt.nu, opt.Gamma, opt.M)))
+
+    print(util.red("\n values    :   nu = {}    Gamma = {}    M = {} \n".format(  opt.nu, opt.Gamma, opt.M)))
     if 4*opt.M**(-1) != (opt.Gamma - opt.nu)**2 :
         print(util.red("NON-CRITICALLY DAMPED REGIME \n "))
     else :

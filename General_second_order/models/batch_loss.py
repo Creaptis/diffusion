@@ -1,13 +1,14 @@
 import jax.numpy as jnp
 import jax.random as random
 import jax 
-import util 
-from utils.modelization_util import get_usual_functions
+import util
 
 
 def make_batch_loss(opt) :
 
-    mu_global_HSM, Sigma_xx, Sigma_vv, Sigma_xv, BETA, L_Cholesky = get_usual_functions(opt)
+    mu_global_HSM = opt.mu_global_HSM 
+    L_Cholesky = opt.L_Cholesky 
+
     num_timesteps = opt.num_timesteps
     batch_size = opt.train_batch_size
     dimension = opt.dimension
@@ -20,7 +21,7 @@ def make_batch_loss(opt) :
         - parameters : a dictionary with three keys 'params_times', 'params_positions', 'params_vitesses', 'params_global' for the respectives MLP
         - batch_positions : positions batch shape (batch_size, 2, 1)
         """
-        key, key2, key3, key4 = random.split(opt.key,4)
+        key, key2, key3, key4 = random.split(key,4)
 
         # sampling times
         time_indices = random.randint(key2, shape = (batch_size,), minval= 1, maxval= num_timesteps)

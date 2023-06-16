@@ -1,8 +1,11 @@
+import numpy as np
+
 import jax.numpy as jnp
 import jax.random as random
-from modelization_util import get_usual_functions
 import matplotlib.pyplot as plt
 import util
+
+import os
 
 def make_variances_and_averages_tests(opt) :
     # Test : does the forward give the same covariance as predicted by our formulas 
@@ -17,7 +20,10 @@ def make_variances_and_averages_tests(opt) :
     batch_size = opt.train_batch_size
     num_timesteps = opt.num_timesteps
 
-    mu_global_HSM, Sigma_xx, Sigma_vv, Sigma_xv, BETA, L_Cholesky = get_usual_functions(opt)
+    mu_global_HSM  = opt.mu_global_HSM   
+    Sigma_xx = opt.Sigma_xx  
+    Sigma_vv = opt.Sigma_vv  
+    Sigma_xv = opt.Sigma_xv  
 
     def forward_step(positions, stepSize, key) :
         """ 
@@ -49,7 +55,7 @@ def make_variances_and_averages_tests(opt) :
     def get_theoretical_average_pos( i , init_position) :
         time_indices = i
         time = jnp.array(util.timeIndices2RealTime( time_indices, num_timesteps ))
-        mu_result = mu_global_HSM(time, init_position, v_0_batch = None, batch_size=1)
+        mu_result = mu_global_HSM(time, init_position, v_0_batch = None)
 
         return jnp.array( mu_result[0,:,:] )
 
@@ -64,13 +70,18 @@ def make_variances_and_averages_tests(opt) :
         intput :
         - init_position : shape (2)
         """ 
+
+        print(util.green(" calculating the theoretical and empirical covariances and averages of diffusion process, \
+                          results are saved in result directory and should be verified by human expert ...") )
+        
+        init_position = init_position.reshape(1,2)
         key, subkey1, subkey2 = random.split(key,3)
         experimental_covariance_array = jnp.zeros(shape= (num_timesteps, 2, 2, 2))
         theoretical_covariance_array = jnp.zeros(shape= (num_timesteps,2, 2))
         theoretical_average_pos_array = jnp.zeros(shape= (num_timesteps,2, 2))
         experimental_average_pos_array = jnp.zeros(shape= (num_timesteps,2, 2))
         positions = jnp.zeros(shape = (num_timesteps, experimental_batch_size, 2,2) )
-        positions = positions.at[0,:,0,:].set(init_position[None,:])
+        positions = positions.at[0,:,0,:].set(init_position)
 
         # noise the input according to Sigma_0
         positions = positions.at[0,:,0,:].set(positions[0,:,0,:] + jnp.sqrt(Sigma_xx_0)*random.normal(subkey1, shape= positions[0,:,0,:].shape))
@@ -92,24 +103,60 @@ def make_variances_and_averages_tests(opt) :
     def plot_covariances_evolution(theoretical_covariance_array, experimental_covariance_array ,theoretical_average_pos_array, experimental_average_pos_array) :
         timesteps = list(range(num_timesteps))
 
+        fig, axs = plt.subplots(2, 2)
+
         for k in range(2):
             for j in range(2):
-                plt.figure(figsize=(6,6))
-                plt.plot(timesteps, experimental_covariance_array[:,0,k,j], label='experimental1')
-                plt.plot(timesteps, experimental_covariance_array[:,1,k,j], label='experimental2')
-                plt.plot(timesteps, theoretical_covariance_array[:,k,j], label='theoretical')
-                plt.legend()
-                plt.show()
-            
+                axs[k,j].plot(timesteps, experimental_covariance_array[:,0,k,j], label='experimental1')
+                axs[k,j].plot(timesteps, experimental_covariance_array[:,1,k,j], label='experimental2')
+                axs[k,j].plot(timesteps, theoretical_covariance_array[:,k,j], label='theoretical')
+                axs[k,j].legend()
+        fig.show()
+        fig.savefig( os.path.join(opt.saving_folder, 'Sigma_curves.png'))
+        
+        fig, axs = plt.subplots(2)
         for k in range(2) :
-            plt.figure(figsize=(6,6))
-            plt.plot(timesteps, experimental_average_pos_array[:,k ,0],  label='experimental1')
-            plt.plot(timesteps, experimental_average_pos_array[:,k ,1],  label='experimental2')
-            plt.plot(timesteps, theoretical_average_pos_array[:,k ,0],  label='theoretical1')
-            plt.plot(timesteps, theoretical_average_pos_array[:,k ,1],  label='theoretical1')
-            plt.legend()
-            plt.show()
+            axs[k].plot(timesteps, experimental_average_pos_array[:,k ,0],  label='experimental1')
+            axs[k].plot(timesteps, experimental_average_pos_array[:,k ,1],  label='experimental2')
+            axs[k].plot(timesteps, theoretical_average_pos_array[:,k ,0],  label='theoretical1')
+            axs[k].plot(timesteps, theoretical_average_pos_array[:,k ,1],  label='theoretical1')
+            axs[k].legend()
+        fig.show()
+        fig.savefig( os.path.join(opt.saving_folder, 'mu_curves.png'))
 
         return
     
     forward_covariances(jnp.array([1,1]), random.PRNGKey(7))
+
+
+
+
+def plot_score_field(opt, order_plotted = 2):
+    """ 
+    input :
+    - order_plotted : int : the order of which the score vector field is plotted, 1 is for positions, 2 is for velocities
+    """ 
+    batch_size = opt.train_batch_size
+    num_timesteps = opt.num_timesteps
+    score = opt.score
+    parameters = opt.parameters
+
+    index_order =  order_plotted - 1
+    # test 
+    batch_velocities = jnp.zeros((batch_size, 2, 1))
+    # Batch_size must be superior to 400 for this test
+    for timestep in range(1,num_timesteps,100) :
+        x,y = np.meshgrid(np.linspace(-3,3,20),np.linspace(-3,3,20))
+        X = x.flatten()
+        Y = y.flatten()
+        batch = np.zeros((batch_size,2,1))
+        batch[:400] = np.concatenate( [X[:,None],Y[:,None]], axis = 1)[...,None]
+        time_indices = np.ones((batch_size,))*timestep
+        scores = score(parameters, batch, batch_velocities, time_indices)[:400]
+        u,v = scores[:,index_order,0], scores[:,index_order,1]
+
+        # print( scores[:,0,0])
+        plt.figure(figsize=(4,3))
+        plt.quiver(x,y,u,v)
+        plt.title( "timestep : " + str(timestep))
+        plt.show()

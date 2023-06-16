@@ -1,10 +1,8 @@
 import jax.numpy as jnp
-
-
-
+import util
 
 # TODO implement the case where -4 + M*(Gamma-nu)**2 < 0
-def get_usual_functions(opt) :
+def initialize_usual_functions(opt) :
     beta = opt.beta
     Gamma = opt.Gamma
     nu = opt.nu
@@ -97,5 +95,37 @@ def get_usual_functions(opt) :
             # (2, batch_size ,  dim) -> (batch_size, 2, dim)
             return jnp.array([mu_x, mu_v ]).transpose( (1,0,2) )
         
+    L_Cholesky = lambda t : jnp.array([ [jnp.sqrt(Sigma_xx(t)) , jnp.zeros( t.shape ) ] ,\
+                                  [ Sigma_xv(t)/jnp.sqrt(Sigma_xx(t)) , jnp.sqrt( (Sigma_xx(t)*Sigma_vv(t) - Sigma_xv(t)**2)/Sigma_xx(t) ) ]]).transpose((2,0,1))
     
-    return(mu_global_HSM, Sigma_xx, Sigma_vv, Sigma_xv, BETA )
+    def L_Cholesky_inv_transpose(t_) :
+        return jnp.array([ 
+            [ 1./jnp.sqrt(Sigma_xx(t_)) ,  -Sigma_xv(t_)/jnp.sqrt((Sigma_vv(t_)*Sigma_xx(t_) - Sigma_xv(t_)**2)*Sigma_xx(t_))  ] ,
+            [ jnp.zeros( t_.shape )     ,  jnp.sqrt(Sigma_xx(t_)/(Sigma_vv(t_)*Sigma_xx(t_) - Sigma_xv(t_)**2))                ]
+            ]).transpose((2,0,1)) 
+    
+    opt.mu_global_HSM  = mu_global_HSM 
+    opt.Sigma_xx = Sigma_xx
+    opt.Sigma_vv = Sigma_vv
+    opt.Sigma_xv = Sigma_xv
+    opt.BETA = BETA
+    opt.L_Cholesky = L_Cholesky
+    opt.L_Cholesky_inv_transpose = L_Cholesky_inv_transpose 
+    
+    return
+
+
+def get_score(opt) :
+    L_Cholesky_inv_transpose = opt.L_Cholesky_inv_transpose
+    epsilon_model = opt.epsilon_model
+    num_timesteps = opt.num_timesteps
+
+    def score(parameters,batch_positions, batch_velocities, time_indices) :
+        """ 
+        input :
+        - TODO write
+        output :
+        - shape (batch_size,2,dim)
+        """
+        real_time_batch = util.timeIndices2RealTime(time_indices , num_timesteps)
+        return( -(L_Cholesky_inv_transpose(real_time_batch)[:,None,:,:]@epsilon_model.apply(parameters,batch_positions, batch_velocities, time_indices).transpose((0,2,1))[:,:,:,None])[:,:,:,0].transpose((0,2,1)) )

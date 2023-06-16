@@ -7,6 +7,10 @@ from jax import random
 from utils.distributions import distribution_dataset
 from utils.distributions import NumpyLoader
 
+import time
+
+from utils.modelization_util import initialize_usual_functions
+
 def set():
     # --------------- basic ---------------
     parser = argparse.ArgumentParser()
@@ -20,7 +24,7 @@ def set():
     # --------------- model ---------------
     parser.add_argument("--T",              type=float,  default=1.,          help="time integral end time")
     parser.add_argument("--num-timesteps",  type=int,    default=1000,        help="number of steps during inference")
-    parser.add_argument("--device",         type=float , default='automatic', choices=['automatic','gpu', 'cpu'] , help= "device to use, default behavior finds and uses the gpu if it exists")
+    parser.add_argument("--device",         type=float ,  choices=["automatic","gpu", "cpu"] , help= "device to use, default behavior finds and uses the gpu if it exists")
     parser.add_argument("--beta",           type=float,                       help= "value of beta (unit of time) if beta is constant")
     parser.add_argument("--Gamma",          type=float,                       help= "value of Gamma")
     parser.add_argument("--M",              type=float,                       help= "value of M")
@@ -34,11 +38,11 @@ def set():
     parser.add_argument("--lr",             type=float,                   help="learning rate")
 
     # --------------- training & sampling (corrector) ---------------
-    parser.add_argument("--train-batch-size", type=int,  help="batch size for sampling data during training")
-    parser.add_argument("--num-train-iter",   type=str,  help="number of training iteration before stopping, includes precomputed steps in case of training resuming")
+    parser.add_argument("--train-batch-size", type=int, help="batch size for sampling data during training")
+    parser.add_argument("--num-train-iter",   type=str, help="number of training iteration before stopping, includes precomputed steps in case of training resuming")
 
     config_name = parser.parse_args().config_name
-
+    print("ezfze",config_name)
     default_config, model_configs = {
         'spiral':       configs.get_spiral_default_configs,
     }.get(config_name)()
@@ -46,19 +50,34 @@ def set():
 
     opt = parser.parse_args()
 
+    print(" \n\n OPT TYPE" , type(opt) , "\n\n")
+
     # ========= auto setup & path handle =========
     if opt.device == 'automatic' :
         print( util.red("the device used is", jax.default_backend()))
 
 
-    opt.key, subkey = random.split(opt.key)
+    opt.key, subkey = random.split( random.PRNGKey(opt.seed))
     # initialise distribution if 
     if opt.config_name == 'spiral' :
         trainset = distribution_dataset(key=subkey , batch_size = opt.train_batch_size)
         opt.train_dataloader = NumpyLoader(trainset, batch_size=1, shuffle=True)
+        opt.saving_folder = os.path.join( "results"
+                                    ,"second_order" + 
+                                    ("_beta" + str(opt.beta) + "_M" + str(opt.M) + "_nu" + str(opt.nu) + "_Gamma" + str(opt.Gamma)).replace(".","-"))
+        
+        if not os.path.isdir( opt.saving_folder ) :
+            print(util.yellow( " -- creating the directory " + str(opt.saving_folder)) + " to store experimental results -- " )
+            os.mkdir( opt.saving_folder )
+        else :
+            print(util.red("THE DIRECTORY OF THIS EXPERIEMENT ALREADY EXISTED, RECUPERATING PREVIOUS CONFIGURATIONS"))
+        initialize_usual_functions(opt)
     else :
         raise RuntimeError 
-        TODO 
+        # TODO 
+
+
+    opt.launch_time = time.time()
 
 
     return opt
