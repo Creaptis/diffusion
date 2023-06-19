@@ -129,3 +129,4 @@ def get_score(opt) :
         """
         real_time_batch = util.timeIndices2RealTime(time_indices , num_timesteps)
         return( -(L_Cholesky_inv_transpose(real_time_batch)[:,None,:,:]@epsilon_model.apply(parameters,batch_positions, batch_velocities, time_indices).transpose((0,2,1))[:,:,:,None])[:,:,:,0].transpose((0,2,1)) )
+    return(score)

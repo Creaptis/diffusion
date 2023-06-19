@@ -111,7 +111,6 @@ def make_variances_and_averages_tests(opt) :
                 axs[k,j].plot(timesteps, experimental_covariance_array[:,1,k,j], label='experimental2')
                 axs[k,j].plot(timesteps, theoretical_covariance_array[:,k,j], label='theoretical')
                 axs[k,j].legend()
-        fig.show()
         fig.savefig( os.path.join(opt.saving_folder, 'Sigma_curves.png'))
         
         fig, axs = plt.subplots(2)
@@ -121,7 +120,6 @@ def make_variances_and_averages_tests(opt) :
             axs[k].plot(timesteps, theoretical_average_pos_array[:,k ,0],  label='theoretical1')
             axs[k].plot(timesteps, theoretical_average_pos_array[:,k ,1],  label='theoretical1')
             axs[k].legend()
-        fig.show()
         fig.savefig( os.path.join(opt.saving_folder, 'mu_curves.png'))
 
         return

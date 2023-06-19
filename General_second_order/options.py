@@ -23,7 +23,7 @@ def set():
 
     # --------------- model ---------------
     parser.add_argument("--T",              type=float,  default=1.,          help="time integral end time")
-    parser.add_argument("--num-timesteps",  type=int,    default=1000,        help="number of steps during inference")
+    parser.add_argument("--num-timesteps",  type=int,    default=2000,        help="number of steps during inference")
     parser.add_argument("--device",         type=float ,  choices=["automatic","gpu", "cpu"] , help= "device to use, default behavior finds and uses the gpu if it exists")
     parser.add_argument("--beta",           type=float,                       help= "value of beta (unit of time) if beta is constant")
     parser.add_argument("--Gamma",          type=float,                       help= "value of Gamma")
@@ -42,15 +42,12 @@ def set():
     parser.add_argument("--num-train-iter",   type=str, help="number of training iteration before stopping, includes precomputed steps in case of training resuming")
 
     config_name = parser.parse_args().config_name
-    print("ezfze",config_name)
     default_config, model_configs = {
         'spiral':       configs.get_spiral_default_configs,
     }.get(config_name)()
     parser.set_defaults(**default_config)
 
     opt = parser.parse_args()
-
-    print(" \n\n OPT TYPE" , type(opt) , "\n\n")
 
     # ========= auto setup & path handle =========
     if opt.device == 'automatic' :
