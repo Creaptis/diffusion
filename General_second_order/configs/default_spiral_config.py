@@ -1,3 +1,6 @@
+
+# NOTE there seems to be no need to use ml_collection anymore, the parser from argparse library is ultemately used anyways. 
+# We could replace ml collections by the parser
 import ml_collections
 import numpy as np
 
@@ -11,7 +14,7 @@ def get_spiral_default_configs():
   
   # --------------- model ---------------
   config.T = 1.0
-  config.num_timesteps = 1000
+  config.num_timesteps = 2000
   config.beta = 8.0
   config.Gamma = 0.
   config.M = 1.

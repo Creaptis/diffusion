@@ -15,7 +15,7 @@ def initialize_usual_functions(opt) :
     BETA = lambda t : t*beta
 
     # check if we are in the critically damped regime
-    if 4*M**(-1) != (Gamma - nu)**2 :
+    if 4*M**(-1) < (Gamma - nu)**2 :
         Sigma_xx = lambda t : (1/(2*M*(-4 + M*(Gamma-nu)**2)))*jnp.exp(-((BETA(t)*(jnp.sqrt(M*(-4 + M*(Gamma-nu)**2)) + M*(Gamma+nu)))/(2*M)))*(2*jnp.exp((BETA(t)*(jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)) + M*(Gamma+ nu)))/(2*M))*M*(-4 + M*(Gamma- nu)**2) + 2*Sigma_vv_0 - 4*jnp.exp((BETA(t)*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)))/(2*M))*(Sigma_vv_0 + M*(-2 + Sigma_xx_0)) + M*(jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)) + M*(Gamma- nu))*(Gamma- nu)*(-1 + Sigma_xx_0) - 2*M*Sigma_xx_0 + jnp.exp((BETA(t)*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)))/ M)*(2*Sigma_vv_0 - M*(Gamma- nu)*(jnp.sqrt( M*(-4 + M*(Gamma- nu)**2)) + M*(-Gamma+ nu))*(-1 + Sigma_xx_0) - 2*M*Sigma_xx_0))
         Sigma_xv = lambda t : (1/(2*M*(-4 + M*(Gamma-nu)**2)))*jnp.exp(-((BETA(t)*(jnp.sqrt(M*(-4 + M*(Gamma-nu)**2)) + M*(Gamma+nu)))/(2*M)))*(-jnp.sqrt(M*(-4 + M*(Gamma- nu)**2))*Sigma_vv_0 + jnp.exp((BETA(t)*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)))/M)*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2))*Sigma_vv_0 + M*(Gamma- nu)*(Sigma_vv_0 + M*(-2 + Sigma_xx_0)) - 2*jnp.exp((BETA(t)*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)))/(2*M))*M*(Gamma- nu)*(Sigma_vv_0 + M*(-2 + Sigma_xx_0)) + jnp.exp((BETA(t)*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)))/M)*M*(Gamma- nu)*(Sigma_vv_0 + M*(-2 + Sigma_xx_0)) + M*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2))*Sigma_xx_0 -jnp.exp((BETA(t)*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)))/M)*M*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2))*Sigma_xx_0)
         Sigma_vv = lambda t : -(1/(2*(-4 + M*(Gamma-nu)**2)))*jnp.exp(-((BETA(t)*(jnp.sqrt(M*(-4 + M*(Gamma-nu)**2)) + M*(Gamma+nu)))/(2*M)))*(-2*jnp.exp((BETA(t)*(jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)) + M*(Gamma+ nu)))/(2*M))*M*(-4 + M*(Gamma- nu)**2) + M**2*(Gamma- nu)**2 + (2 + jnp.sqrt(M*(-4 + M*(Gamma- nu)**2))*(Gamma- nu))*Sigma_vv_0 + 4*jnp.exp((BETA(t)*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)))/(2*M))*(Sigma_vv_0 + M*(-2 + Sigma_xx_0)) - M*((Gamma- nu)*(jnp.sqrt( M*(-4 + M*(Gamma- nu)**2)) + Gamma*Sigma_vv_0 - nu*Sigma_vv_0) + 2*Sigma_xx_0) + jnp.exp((BETA(t)*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)))/M)*(M**2*(Gamma- nu)**2 + 2*Sigma_vv_0 + jnp.sqrt(M*(-4 + M*(Gamma- nu)**2))*(-Gamma+ nu)*Sigma_vv_0 + M*(Gamma- nu)*(jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)) - Gamma*Sigma_vv_0 + nu*Sigma_vv_0) - 2*M*Sigma_xx_0))
@@ -41,6 +41,33 @@ def initialize_usual_functions(opt) :
 
             mu_v = (jnp.exp(-((BETA(t)*(jnp.sqrt(-4 + M*(Gamma - nu)**2) + jnp.sqrt(M)*(Gamma + nu)))/( 4*jnp.sqrt(M))))*((1 + jnp.exp(( BETA(t)*jnp.sqrt(-4 + M*(Gamma - nu)**2))/(2*jnp.sqrt(M))))*v0*jnp.sqrt(-4 + M*(Gamma - nu)**2) - (-1 + jnp.exp(( BETA(t)*jnp.sqrt(-4 + M*(Gamma - nu)**2))/( 2*jnp.sqrt(M))))*jnp.sqrt(M)*(2*x0 + v0*(-Gamma + nu))))/( 2*jnp.sqrt(-4 + M*(Gamma - nu)**2) )
             mu_x = (jnp.exp(-((BETA(t)*(jnp.sqrt(-4 + M*(Gamma - nu)**2) + jnp.sqrt(M)*(Gamma + nu)))/( 4*jnp.sqrt(M))))*(2*(-1 + jnp.exp(( BETA(t)*jnp.sqrt(-4 + M*(Gamma - nu)**2))/( 2*jnp.sqrt(M))))*v0 + (1 + jnp.exp(( BETA(t)*jnp.sqrt(-4 + M*(Gamma - nu)**2))/(2*jnp.sqrt(M))))*jnp.sqrt(M)*x0*jnp.sqrt(-4 + M*(Gamma - nu)**2) - (-1 + jnp.exp(( BETA(t)*jnp.sqrt(-4 + M*(Gamma - nu)**2))/( 2*jnp.sqrt(M))))*M*x0*(Gamma - nu)))/( 2*jnp.sqrt(M)*jnp.sqrt(-4 + M*(Gamma - nu)**2))
+            
+            # (2, batch_size ,  dim) -> (batch_size, 2, dim)
+            return jnp.array([mu_x, mu_v ]).transpose( (1,0,2) )
+    elif 4*M**(-1) > (Gamma - nu)**2 :
+        Sigma_xx = lambda t : (-4*Sigma_vv_0*jnp.sin((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(4*jnp.sqrt(M)))**2)/(jnp.exp((BETA(t)*(Gamma + nu))/2)*M*(-4 + M*(Gamma - nu)**2)) + (Sigma_xx_0*(-2 + (-2 + M*(Gamma - nu)**2)*jnp.cos((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(2*jnp.sqrt(M))) + jnp.sqrt(M*(4 - M*(Gamma - nu)**2))*(Gamma - nu)*jnp.sin((BETA(t)*jnp.sqrt(M*(4 - M*(Gamma - nu)**2)))/(2*M))))/(jnp.exp((BETA(t)*(Gamma + nu))/2)*(-4 + M*(Gamma - nu)**2)) + (4 + jnp.exp((BETA(t)*(Gamma + nu))/2)*(-4 + M*(Gamma - nu)**2) - M*(Gamma - nu)**2*jnp.cos((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(2*jnp.sqrt(M))) + jnp.sqrt(M*(4 - M*(Gamma - nu)**2))*(-Gamma + nu)*jnp.sin((BETA(t)*jnp.sqrt(M*(4 - M*(Gamma - nu)**2)))/(2*M)))/(jnp.exp((BETA(t)*(Gamma + nu))/2)*(-4 + M*(Gamma - nu)**2))
+        Sigma_xv = lambda t : (4*M*(Gamma - nu)*jnp.sin((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(4*jnp.sqrt(M)))**2)/(jnp.exp((BETA(t)*(Gamma + nu))/2)*(-4 + M*(Gamma - nu)**2)) + (Sigma_vv_0*(M*(-Gamma + nu) + M*(Gamma - nu)*jnp.cos((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(2*jnp.sqrt(M))) - jnp.sqrt(M*(4 - M*(Gamma - nu)**2))*jnp.sin((BETA(t)*jnp.sqrt(M*(4 - M*(Gamma - nu)**2)))/(2*M))))/(jnp.exp((BETA(t)*(Gamma + nu))/2)*M*(-4 + M*(Gamma - nu)**2)) + (Sigma_xx_0*(M*(-Gamma + nu) + M*(Gamma - nu)*jnp.cos((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(2*jnp.sqrt(M))) + jnp.sqrt(M*(4 - M*(Gamma - nu)**2))*jnp.sin((BETA(t)*jnp.sqrt(M*(4 - M*(Gamma - nu)**2)))/(2*M))))/(jnp.exp((BETA(t)*(Gamma + nu))/2)*(-4 + M*(Gamma - nu)**2))  
+        Sigma_vv = lambda t : (-4*M*Sigma_xx_0*jnp.sin((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(4*jnp.sqrt(M)))**2)/(jnp.exp((BETA(t)*(Gamma + nu))/2)*(-4 + M*(Gamma - nu)**2)) + (M*(4 + jnp.exp((BETA(t)*(Gamma + nu))/2)*(-4 + M*(Gamma - nu)**2) - M*(Gamma - nu)**2*jnp.cos((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(2*jnp.sqrt(M))) + jnp.sqrt(M*(4 - M*(Gamma - nu)**2))*(Gamma - nu)*jnp.sin((BETA(t)*jnp.sqrt(M*(4 - M*(Gamma - nu)**2)))/(2*M))))/(jnp.exp((BETA(t)*(Gamma + nu))/2)*(-4 + M*(Gamma - nu)**2)) + (Sigma_vv_0*(-2 + (-2 + M*(Gamma - nu)**2)*jnp.cos((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(2*jnp.sqrt(M))) + jnp.sqrt(M*(4 - M*(Gamma - nu)**2))*(-Gamma + nu)*jnp.sin((BETA(t)*jnp.sqrt(M*(4 - M*(Gamma - nu)**2)))/(2*M))))/(jnp.exp((BETA(t)*(Gamma + nu))/2)*(-4 + M*(Gamma - nu)**2))
+
+        def mu_global_HSM(t_batch, x_0_batch, v_0_batch = None, batch_size = batch_size) :
+            """ 
+            input :
+            - t_batch : (batch_size,)
+            - x_0_batch : (batch_size,dimension,1) or (batch_size,dimension)
+            - v_0_batch (optional) : (batch_size,dimension,1) or (batch_size,dimension)
+            output :
+            - mu : (batch_size,2,dimension)
+            """
+            if v_0_batch is None :
+                v_0_batch = jnp.zeros(x_0_batch.shape)
+            
+            x0 = x_0_batch.reshape(batch_size, dimension)
+            v0 = v_0_batch.reshape(batch_size, dimension)
+            t = t_batch.reshape((-1,1))
+
+            mu_v = (-2*jnp.sqrt(M)*x0*jnp.sin((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(4*jnp.sqrt(M))))/(jnp.exp((BETA(t)*(Gamma + nu))/4)*jnp.sqrt(4 - M*(Gamma - nu)**2)) + (v0*(jnp.sqrt(4 - M*(Gamma - nu)**2)*jnp.cos((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(4*jnp.sqrt(M))) + jnp.sqrt(M)*(Gamma - nu)*jnp.sin((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(4*jnp.sqrt(M)))))/(jnp.exp((BETA(t)*(Gamma + nu))/4)*jnp.sqrt(4 - M*(Gamma - nu)**2))
+            
+            mu_x = (2*v0*jnp.sin((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(4*jnp.sqrt(M))))/(jnp.exp((BETA(t)*(Gamma + nu))/4)*jnp.sqrt(M)*jnp.sqrt(4 - M*(Gamma - nu)**2)) + (x0*(jnp.sqrt(4 - M*(Gamma - nu)**2)*jnp.cos((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(4*jnp.sqrt(M))) + jnp.sqrt(M)*(-Gamma + nu)*jnp.sin((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(4*jnp.sqrt(M)))))/(jnp.exp((BETA(t)*(Gamma + nu))/4)*jnp.sqrt(4 - M*(Gamma - nu)**2))
             
             # (2, batch_size ,  dim) -> (batch_size, 2, dim)
             return jnp.array([mu_x, mu_v ]).transpose( (1,0,2) )

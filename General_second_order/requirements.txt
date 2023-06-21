@@ -1,0 +1,16 @@
+conda install pip
+pip install --upgrade pip
+
+
+pip install jax==0.4.12 -f https://storage.googleapis.com/jax-releases/jax_releases.html
+# pip install jaxlib==0.4.12 -f https://storage.googleapis.com/jax-releases/jax_releases.html
+pip install ml_collections==0.1.1
+pip install termcolor==2.1.0
+pip install pytorch==1.13.1
+
+
+
+
+
+
+
