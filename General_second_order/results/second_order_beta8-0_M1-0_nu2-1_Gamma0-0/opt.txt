@@ -15,10 +15,18 @@
   "train_batch_size": 512,
   "num_train_iter": 30000,
   "key": [
-    2442337423,
-    3846252442
+    3221889941,
+    104226811
   ],
   "saving_folder": "results/second_order_beta8-0_M1-0_nu2-1_Gamma0-0",
   "launch_time": 1686922887.750422,
-  "index_iter": 30000
+  "index_iter": 30000,
+  "estimated_score_norm_integral": [
+    0.0,
+    147.96529115943554
+  ],
+  "variance_score_norm_integral": [
+    0.0,
+    4.666074354262575
+  ]
 }

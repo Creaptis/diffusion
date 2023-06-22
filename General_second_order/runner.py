@@ -22,7 +22,8 @@ from utils.modelization_util import get_score
 
 import models.mlpSecondOrderModel as Model
 from models.batch_loss import make_batch_loss
-from utils.tests_and_measures import make_variances_and_averages_tests
+from utils.tests_and_measures import make_variances_and_averages_tests, score_norm_estimate
+from utils.saver_loader import load_opt, save_opt
 import util
 
 class Runner():
@@ -41,29 +42,16 @@ class Runner():
         self.savingParamsFile = os.path.join(opt.saving_folder , "parameters.npy")
         self.savingOptimStateFile = os.path.join(opt.saving_folder , "optimizer_state.npy")
 
-        # NOTE preprocessor allows to process opt before saving to remove all elements not of basic types
-        self.preprocessor = util.SkipFilter([int, str, float, bool, list], ["parameters"])
+        # # NOTE preprocessor allows to process opt before saving to remove all elements not of basic types
+        # self.preprocessor = util.SkipFilter([int, str, float, bool, list], ["parameters"])
     
     def train_or_retrieve_model(self, opt) :
         key = opt.key
         savingParamsFile = self.savingParamsFile
 
         if os.path.isfile(savingParamsFile) :
-            
-            with open(os.path.join(opt.saving_folder, 'opt.txt'), 'r') as f:
-                print(util.red(" CAUTION ! : previously saved model params are being loaded, there is no verification that model parameters are the same as those of the command line "))
-                opt.__dict__.update(json.load(f))
 
-                # NOTE jax PRNK keys are essentially uint32 arrays
-                opt.key = np.array(opt.key).astype('uint32')
-
-            with open(savingParamsFile, 'rb') as file:
-                opt.parameters = pickle.load(file)
-
-            opt.optimizer = optax.adam(opt.lr)
-            with open( self.savingOptimStateFile, 'rb') as file:
-                opt.optimizer_state = pickle.load(file)
-            assert hasattr(opt , "index_iter")
+            load_opt(opt)
             
             self.training(opt, starting_index = opt.index_iter + 1)
         else :
@@ -105,26 +93,8 @@ class Runner():
                 opt.parameters = optax.apply_updates(opt.parameters, updates)
                 
                 if i%5000 == 0 :
-                    print(util.green("Saving progression ..." ))
                     opt.index_iter = i 
-
-                    with open(self.savingParamsFile, 'wb') as file:
-                        pickle.dump(opt.parameters, file)
-                    
-                    with open( self.savingOptimStateFile, 'wb') as file:
-                        pickle.dump(opt.optimizer_state , file)
-
-                    with open( os.path.join(opt.saving_folder, 'opt.txt'), 'w') as f:
-
-                        # NOTE important to save current key for reproductability, has to be saved as array however
-                        opt.key = np.array(opt.key).astype('uint32').tolist()
-                        print("!!!!", self.preprocessor.filter(opt.__dict__))
-                        json.dump( self.preprocessor.filter(opt.__dict__), f, indent=2)
-
-                        opt.key = np.array(opt.key).astype('uint32')
-                        print("A", opt.key)
-                    
-                    print(util.green("Saving DONE \n" ))
+                    save_opt(opt)
 
                 i+=1
 
@@ -165,15 +135,6 @@ class Runner():
             score_global = score(parameters, batch_positions, batch_velocities, time_indices[i+1])
             score_x = score_global[:,0,:,None]
             score_v = score_global[:,1,:,None]
-            # print("score_v",score_v.shape)
-            # print(score_x.shape)
-            # print("batch_positions" ,batch_positions.shape)
-            # print("batch_velocities",batch_velocities.shape)
-
-            # print("values of update", -( Gamma*batch_positions + 1.0/M*batch_velocities)*beta/2.*step_size[:,None,None] + \
-            #                         jnp.sqrt(Gamma*beta*step_size[:,None,None])*0 + \
-            #                         ( Gamma*batch_positions*0 + 1./2*Gamma*score_x )*beta*step_size[:,None,None] )
-
             batch_positions_updated = batch_positions + \
                                     -( Gamma*batch_positions + 1.0/M*batch_velocities)*beta/2.*step_size[:,None,None] + \
                                     jnp.sqrt(Gamma*beta*step_size[:,None,None])*0 + \
@@ -216,9 +177,6 @@ class Runner():
         fig.savefig( os.path.join( opt.saving_folder , 'deterministic_predictor.png' ) )
 
         return(batch)
-    
-
-    
 
     def generate_batch(self, opt) :
         
@@ -298,3 +256,9 @@ class Runner():
         ###
 
         return(batch)
+    
+    def get_score_norm_integral(self, opt):
+
+        score_norm_estimate(opt)
+
+        return

@@ -11,11 +11,12 @@ def initialize_usual_functions(opt) :
     Sigma_vv_0 = opt.Sigma_vv_0
     dimension = opt.dimension
     batch_size = opt.train_batch_size
+    tiny_tiny_value = 10**(-7)
 
     BETA = lambda t : t*beta
 
     # check if we are in the critically damped regime
-    if 4*M**(-1) < (Gamma - nu)**2 :
+    if 4*M**(-1) < (Gamma - nu)**2 - tiny_tiny_value :
         Sigma_xx = lambda t : (1/(2*M*(-4 + M*(Gamma-nu)**2)))*jnp.exp(-((BETA(t)*(jnp.sqrt(M*(-4 + M*(Gamma-nu)**2)) + M*(Gamma+nu)))/(2*M)))*(2*jnp.exp((BETA(t)*(jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)) + M*(Gamma+ nu)))/(2*M))*M*(-4 + M*(Gamma- nu)**2) + 2*Sigma_vv_0 - 4*jnp.exp((BETA(t)*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)))/(2*M))*(Sigma_vv_0 + M*(-2 + Sigma_xx_0)) + M*(jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)) + M*(Gamma- nu))*(Gamma- nu)*(-1 + Sigma_xx_0) - 2*M*Sigma_xx_0 + jnp.exp((BETA(t)*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)))/ M)*(2*Sigma_vv_0 - M*(Gamma- nu)*(jnp.sqrt( M*(-4 + M*(Gamma- nu)**2)) + M*(-Gamma+ nu))*(-1 + Sigma_xx_0) - 2*M*Sigma_xx_0))
         Sigma_xv = lambda t : (1/(2*M*(-4 + M*(Gamma-nu)**2)))*jnp.exp(-((BETA(t)*(jnp.sqrt(M*(-4 + M*(Gamma-nu)**2)) + M*(Gamma+nu)))/(2*M)))*(-jnp.sqrt(M*(-4 + M*(Gamma- nu)**2))*Sigma_vv_0 + jnp.exp((BETA(t)*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)))/M)*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2))*Sigma_vv_0 + M*(Gamma- nu)*(Sigma_vv_0 + M*(-2 + Sigma_xx_0)) - 2*jnp.exp((BETA(t)*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)))/(2*M))*M*(Gamma- nu)*(Sigma_vv_0 + M*(-2 + Sigma_xx_0)) + jnp.exp((BETA(t)*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)))/M)*M*(Gamma- nu)*(Sigma_vv_0 + M*(-2 + Sigma_xx_0)) + M*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2))*Sigma_xx_0 -jnp.exp((BETA(t)*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)))/M)*M*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2))*Sigma_xx_0)
         Sigma_vv = lambda t : -(1/(2*(-4 + M*(Gamma-nu)**2)))*jnp.exp(-((BETA(t)*(jnp.sqrt(M*(-4 + M*(Gamma-nu)**2)) + M*(Gamma+nu)))/(2*M)))*(-2*jnp.exp((BETA(t)*(jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)) + M*(Gamma+ nu)))/(2*M))*M*(-4 + M*(Gamma- nu)**2) + M**2*(Gamma- nu)**2 + (2 + jnp.sqrt(M*(-4 + M*(Gamma- nu)**2))*(Gamma- nu))*Sigma_vv_0 + 4*jnp.exp((BETA(t)*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)))/(2*M))*(Sigma_vv_0 + M*(-2 + Sigma_xx_0)) - M*((Gamma- nu)*(jnp.sqrt( M*(-4 + M*(Gamma- nu)**2)) + Gamma*Sigma_vv_0 - nu*Sigma_vv_0) + 2*Sigma_xx_0) + jnp.exp((BETA(t)*jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)))/M)*(M**2*(Gamma- nu)**2 + 2*Sigma_vv_0 + jnp.sqrt(M*(-4 + M*(Gamma- nu)**2))*(-Gamma+ nu)*Sigma_vv_0 + M*(Gamma- nu)*(jnp.sqrt(M*(-4 + M*(Gamma- nu)**2)) - Gamma*Sigma_vv_0 + nu*Sigma_vv_0) - 2*M*Sigma_xx_0))
@@ -29,6 +30,10 @@ def initialize_usual_functions(opt) :
             output :
             - mu : (batch_size,2,dimension)
             """
+
+            assert len(x_0_batch.shape) >=2 , "in case of batch_size = 1, x_0 should still have a batch dimension"
+            batch_size = x_0_batch.shape[0]
+
             assert len(x_0_batch.shape) >=2 , "in case of batch_size = 1, x_0 should still have a batch dimension"
             batch_size = x_0_batch.shape[0]
 
@@ -44,7 +49,7 @@ def initialize_usual_functions(opt) :
             
             # (2, batch_size ,  dim) -> (batch_size, 2, dim)
             return jnp.array([mu_x, mu_v ]).transpose( (1,0,2) )
-    elif 4*M**(-1) > (Gamma - nu)**2 :
+    elif 4*M**(-1) > (Gamma - nu)**2 + tiny_tiny_value :
         Sigma_xx = lambda t : (-4*Sigma_vv_0*jnp.sin((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(4*jnp.sqrt(M)))**2)/(jnp.exp((BETA(t)*(Gamma + nu))/2)*M*(-4 + M*(Gamma - nu)**2)) + (Sigma_xx_0*(-2 + (-2 + M*(Gamma - nu)**2)*jnp.cos((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(2*jnp.sqrt(M))) + jnp.sqrt(M*(4 - M*(Gamma - nu)**2))*(Gamma - nu)*jnp.sin((BETA(t)*jnp.sqrt(M*(4 - M*(Gamma - nu)**2)))/(2*M))))/(jnp.exp((BETA(t)*(Gamma + nu))/2)*(-4 + M*(Gamma - nu)**2)) + (4 + jnp.exp((BETA(t)*(Gamma + nu))/2)*(-4 + M*(Gamma - nu)**2) - M*(Gamma - nu)**2*jnp.cos((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(2*jnp.sqrt(M))) + jnp.sqrt(M*(4 - M*(Gamma - nu)**2))*(-Gamma + nu)*jnp.sin((BETA(t)*jnp.sqrt(M*(4 - M*(Gamma - nu)**2)))/(2*M)))/(jnp.exp((BETA(t)*(Gamma + nu))/2)*(-4 + M*(Gamma - nu)**2))
         Sigma_xv = lambda t : (4*M*(Gamma - nu)*jnp.sin((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(4*jnp.sqrt(M)))**2)/(jnp.exp((BETA(t)*(Gamma + nu))/2)*(-4 + M*(Gamma - nu)**2)) + (Sigma_vv_0*(M*(-Gamma + nu) + M*(Gamma - nu)*jnp.cos((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(2*jnp.sqrt(M))) - jnp.sqrt(M*(4 - M*(Gamma - nu)**2))*jnp.sin((BETA(t)*jnp.sqrt(M*(4 - M*(Gamma - nu)**2)))/(2*M))))/(jnp.exp((BETA(t)*(Gamma + nu))/2)*M*(-4 + M*(Gamma - nu)**2)) + (Sigma_xx_0*(M*(-Gamma + nu) + M*(Gamma - nu)*jnp.cos((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(2*jnp.sqrt(M))) + jnp.sqrt(M*(4 - M*(Gamma - nu)**2))*jnp.sin((BETA(t)*jnp.sqrt(M*(4 - M*(Gamma - nu)**2)))/(2*M))))/(jnp.exp((BETA(t)*(Gamma + nu))/2)*(-4 + M*(Gamma - nu)**2))  
         Sigma_vv = lambda t : (-4*M*Sigma_xx_0*jnp.sin((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(4*jnp.sqrt(M)))**2)/(jnp.exp((BETA(t)*(Gamma + nu))/2)*(-4 + M*(Gamma - nu)**2)) + (M*(4 + jnp.exp((BETA(t)*(Gamma + nu))/2)*(-4 + M*(Gamma - nu)**2) - M*(Gamma - nu)**2*jnp.cos((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(2*jnp.sqrt(M))) + jnp.sqrt(M*(4 - M*(Gamma - nu)**2))*(Gamma - nu)*jnp.sin((BETA(t)*jnp.sqrt(M*(4 - M*(Gamma - nu)**2)))/(2*M))))/(jnp.exp((BETA(t)*(Gamma + nu))/2)*(-4 + M*(Gamma - nu)**2)) + (Sigma_vv_0*(-2 + (-2 + M*(Gamma - nu)**2)*jnp.cos((BETA(t)*jnp.sqrt(4 - M*(Gamma - nu)**2))/(2*jnp.sqrt(M))) + jnp.sqrt(M*(4 - M*(Gamma - nu)**2))*(-Gamma + nu)*jnp.sin((BETA(t)*jnp.sqrt(M*(4 - M*(Gamma - nu)**2)))/(2*M))))/(jnp.exp((BETA(t)*(Gamma + nu))/2)*(-4 + M*(Gamma - nu)**2))
@@ -58,9 +63,12 @@ def initialize_usual_functions(opt) :
             output :
             - mu : (batch_size,2,dimension)
             """
+            assert len(x_0_batch.shape) >=2 , "in case of batch_size = 1, x_0 should still have a batch dimension"
+            batch_size = x_0_batch.shape[0]
+
             if v_0_batch is None :
                 v_0_batch = jnp.zeros(x_0_batch.shape)
-            
+                
             x0 = x_0_batch.reshape(batch_size, dimension)
             v0 = v_0_batch.reshape(batch_size, dimension)
             t = t_batch.reshape((-1,1))
@@ -72,7 +80,6 @@ def initialize_usual_functions(opt) :
             # (2, batch_size ,  dim) -> (batch_size, 2, dim)
             return jnp.array([mu_x, mu_v ]).transpose( (1,0,2) )
     else :
-
         A1 = 1./(4*M)
         A2 = M**(-2)/8.
         A2 = M**(-2)/4. # TODO REVOIR !!
