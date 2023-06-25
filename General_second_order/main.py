@@ -15,8 +15,7 @@ def main(opt):
     run.train_or_retrieve_model(opt)
     run.generate_deterministic_batch(opt)
     run.generate_batch( opt)
-    run.get_score_norm_integral(opt)
-
+    # run.get_score_norm_integral(opt)
 
 if __name__ == "__main__":
 

@@ -138,11 +138,11 @@ class Runner():
             batch_positions_updated = batch_positions + \
                                     -( Gamma*batch_positions + 1.0/M*batch_velocities)*beta/2.*step_size[:,None,None] + \
                                     jnp.sqrt(Gamma*beta*step_size[:,None,None])*0 + \
-                                    ( Gamma*batch_positions*0 + 1.*Gamma*score_x )*beta*step_size[:,None,None]
+                                    ( Gamma*batch_positions*0 + 2.*Gamma*score_x )*beta*step_size[:,None,None]
             batch_velocities_updated = batch_velocities + \
                                     (batch_positions - nu*batch_velocities)*beta/2.*step_size[:,None,None] + \
                                     jnp.sqrt(M*nu*beta*step_size[:,None,None])*0 + \
-                                    ( nu*batch_velocities*0 + 1.*M*nu*score_v )*beta*step_size[:,None,None]
+                                    ( nu*batch_velocities*0 + 2.*M*nu*score_v )*beta*step_size[:,None,None]
 
             batch = jnp.concatenate( ( batch_positions_updated[:,None,:,:], batch_velocities_updated[:,None,:,:]), axis = 1)
             return(batch)
@@ -204,8 +204,34 @@ class Runner():
             - step_size : shape (batch_size,)
             - parameters : dict of parameters for score(...)
             """
-            key, subkey = random.split(key)
+            # key, subkey = random.split(key)
             
+            # batch_positions = batch[:,0,:,:] 
+            # batch_velocities = batch[:,1,:,:] 
+
+            # w = random.normal(subkey, shape = batch.shape)
+            # w_x = w[:,0,:,:]
+            # w_v = w[:,1,:,:]
+
+            # score_global = score(parameters, batch_positions, batch_velocities, time_indices[i+1])
+            # score_x = score_global[:,0,:,None]
+            # score_v = score_global[:,1,:,None]
+            
+
+            # batch_positions_updated = batch_positions + \
+            #                         -( Gamma*batch_positions + 1.0/M*batch_velocities)*beta/2.*step_size[:,None,None] + \
+            #                         jnp.sqrt(Gamma*beta*step_size[:,None,None])*w_x + \
+            #                         ( Gamma*batch_positions + Gamma*score_x )*beta*step_size[:,None,None]
+            # batch_velocities_updated = batch_velocities + \
+            #                         (batch_positions - nu*batch_velocities)*beta/2.*step_size[:,None,None] + \
+            #                         jnp.sqrt(M*nu*beta*step_size[:,None,None])*w_v + \
+            #                         ( nu*batch_velocities + M*nu*score_v )*beta*step_size[:,None,None]
+
+            # batch = jnp.concatenate( ( batch_positions_updated[:,None,:,:], batch_velocities_updated[:,None,:,:]), axis = 1)
+
+            ####
+            key, subkey = random.split(key)
+
             batch_positions = batch[:,0,...] 
             batch_velocities = batch[:,1,...] 
 
@@ -217,7 +243,6 @@ class Runner():
             score_x = score_global[:,0,:,None]
             score_v = score_global[:,1,:,None]
             
-
             batch_positions_updated = batch_positions + \
                                     -( Gamma*batch_positions + 1.0/M*batch_velocities)*beta/2.*step_size[:,None,None] + \
                                     jnp.sqrt(Gamma*beta*step_size[:,None,None])*w_x + \
@@ -228,9 +253,11 @@ class Runner():
                                     ( nu*batch_velocities + M*nu*score_v )*beta*step_size[:,None,None]
 
             batch = jnp.concatenate( ( batch_positions_updated[:,None,:,:], batch_velocities_updated[:,None,:,:]), axis = 1)
+            ####
+
             return(batch)
         
-
+        print("num_timesteps",num_timesteps)
         time_indices = jnp.array( list(range(num_timesteps))*batch_size).reshape(batch_size,num_timesteps).T
         stepSize = util.timeSteps2stepSize(num_timesteps, batch_size)
         batch = random.normal(key1, shape = (batch_size, 2, 2,1))*jnp.array([1,M]).reshape((1,-1,1,1)) # prior distribution
@@ -239,10 +266,11 @@ class Runner():
         skip_number = 50
         tot_number_imgs = opt.num_timesteps//skip_number
 
-        batches_to_plot = np.zeros(shape=(tot_number_imgs,batch_size,2))
+        batches_to_plot = np.zeros( shape=( tot_number_imgs,batch_size,2 ) )
+        key = opt.key
         for i in range(num_timesteps - 1 , 0, -1) :
-
-            batch = predictor(batch, i, stepSize[i], parameters, opt.key )
+            key, = random.split(key, 1)
+            batch = predictor(batch, i, stepSize[i], parameters, key )
             if i%skip_number == 1 :
                 batches_to_plot[i//skip_number] = np.array(batch[:,0,:,0]) # positions, not velocities
         

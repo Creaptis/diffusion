@@ -22,7 +22,6 @@ def save_opt(opt) :
     savingOptimStateFile = os.path.join(opt.saving_folder , "optimizer_state.npy")
 
     print(util.green("Saving progression ..." ))
-    
 
     with open(savingParamsFile, 'wb') as file:
         pickle.dump(opt.parameters, file)
@@ -34,15 +33,19 @@ def save_opt(opt) :
 
         # NOTE important to save current key for reproductability, has to be saved as list however
         opt.key = np.array(opt.key).astype('uint32').tolist()
-        opt.estimated_score_norm_integral =  np.array(opt.estimated_score_norm_integral).tolist()
-        opt.variance_score_norm_integral = np.array(opt.variance_score_norm_integral).tolist()
+        if hasattr(opt , "estimated_score_norm_integral") :
+            opt.estimated_score_norm_integral =  np.array(opt.estimated_score_norm_integral).tolist()
+        if hasattr(opt , "variance_score_norm_integral") :
+            opt.variance_score_norm_integral = np.array(opt.variance_score_norm_integral).tolist()
         
         print("!!!!", preprocessor.filter(opt.__dict__))
         json.dump( preprocessor.filter(opt.__dict__), f, indent=2)
 
         opt.key = np.array(opt.key).astype('uint32')
-        opt.estimated_score_norm_integral =  np.array(opt.estimated_score_norm_integral)
-        opt.variance_score_norm_integral = np.array(opt.variance_score_norm_integral)
+        if hasattr(opt , "estimated_score_norm_integral") :
+            opt.estimated_score_norm_integral =  np.array(opt.estimated_score_norm_integral)
+        if hasattr(opt , "variance_score_norm_integral") :
+            opt.variance_score_norm_integral = np.array(opt.variance_score_norm_integral)
     
     print(util.green("Saving DONE \n" ))
 

@@ -173,7 +173,7 @@ def score_norm_estimate(opt) :
 
     key1, opt.key = random.split(opt.key)
     num_timesteps = opt.num_timesteps 
-    batch_size = 100000 # try this here
+    batch_size = 10000 # try this here
     M = opt.M 
     parameters = opt.parameters 
     Gamma = opt.Gamma
@@ -228,7 +228,7 @@ def score_norm_estimate(opt) :
 
         batch, score_norm = predictor( batch, i, stepSize[i], parameters, opt.key )
         score_ponderated_norm_integral += np.array(score_norm)
-        variance_estimate = np.var( np.mean( score_ponderated_norm_integral.reshape( batch_size//50, 50, 2 ) , axis = 0), axis = 0)
+        variance_estimate = np.var( np.mean( score_ponderated_norm_integral.reshape( batch_size//20, 20, 2 ) , axis = 0), axis = 0)
         tot_score_ponderated_norm_integral = np.mean( score_ponderated_norm_integral, axis = 0)
     print(util.blue("The estimated score norm integral is {}, with an estimated variance on the measure bounded by {}".format(tot_score_ponderated_norm_integral,variance_estimate)))
     

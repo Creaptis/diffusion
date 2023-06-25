@@ -28,7 +28,7 @@ def get_spiral_default_configs():
   
   # --------------- training & sampling (corrector) ---------------
   config.train_batch_size = 512
-  config.num_train_iter = 50000 # make sure we converge
+  config.num_train_iter = 25000 # make sure we converge
 
   model_configs=None
   return config, model_configs
